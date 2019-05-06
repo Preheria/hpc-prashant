@@ -7,19 +7,42 @@
 	#include <signal.h>
 	#include <pthread.h>
 	#include <math.h>
+/******************************************************************************
+  Displays two grey scale images. On the left is an image that has come from an 
+  image processing pipeline, just after colour thresholding. On the right is 
+  the result of applying an edge detection convolution operator to the left
+  image. This program performs that convolution.
+   
+  Things to note:
+    - A single unsigned char stores a pixel intensity value. 0 is black, 256 is
+      white.
+    - The colour mode used is GL_LUMINANCE. This uses a single number to 
+      represent a pixel's intensity. In this case we want 256 shades of grey,
+      which is best stored in eight bits, so GL_UNSIGNED_BYTE is specified as 
+      the pixel data type.
+    
+  To compile adapt the code below wo match your filenames:  
+    gcc -o image_posix image_posix.c -lGL -lglut -lm
 
+  To Run:
+	./ image_posix
+   
+  Dr Kevan Buckley, University of Wolverhampton, 2018
+******************************************************************************/
 	#define width 100 
 	#define height 72
 	#define n_threads 4
 
 	unsigned char image[], results[width * height];
 	
+	//structure to store image, convolved image, start of the loop, stride an total no of pixel vlaues
 	typedef struct{
 	unsigned char *in;
 	unsigned char *out;
 	int start,stride,n_pixels;
 	} in_out;
 
+	//takes two times as parameter and returns their difference
 	int time_difference(struct timespec *start, struct timespec *finish,
                     long long int *difference) {
   	long long int ds =  finish->tv_sec - start->tv_sec; 
@@ -38,6 +61,8 @@
 		in_out *inout = malloc(sizeof(in_out) * n_threads);
 		
 		int i;
+		
+		// stores eight different values for start and other values are same for all the eight instance of inout structure array
 		for(i=0;i<n_threads;i++){
 			inout[i].start = i;
 		  	inout[i].stride = n_threads;
@@ -47,11 +72,11 @@
 		}
 
 		void *detector();
-		
+		// creates eight threads in which each instance of structure array's addresses are passed to detector function
 		for(i=0;i<n_threads;i++){
 		  	pthread_create(&t[i], NULL, detector, &inout[i]);
 		}
-
+		
 		for(i=0;i<n_threads;i++){
 		  	pthread_join(t[i], NULL);
 		}
@@ -59,6 +84,7 @@
 		free(t);
 		free(inout);
 	}
+	// this function takes each instance of structure array 
 	void *detector(in_out *inout)
 	{
 		
@@ -79,6 +105,7 @@
 		    	f = i + 1;
 		    	h = i - width;
 
+				// convolution process
 		    	r = (inout->in[i] * 4) + (inout->in[b] * -1) + (inout->in[d] * -1) + (inout->in[f] * -1)
 		    	    + (inout->in[h] * -1);
 
@@ -130,7 +157,7 @@
 		struct timespec start, finish;   
   		long long int time_elapsed;
   		clock_gettime(CLOCK_MONOTONIC, &start);
-
+		// passes image data and result array of equal size to image data and makes prominent features white and rest black
 		detect_edges(image, results);
 		
 		clock_gettime(CLOCK_MONOTONIC, &finish);

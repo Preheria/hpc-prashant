@@ -5,7 +5,7 @@
 #include <GL/gl.h>
 #include <malloc.h>
 #include <signal.h>
-#include <cuda_runtime_api.h>
+
 /******************************************************************************
   Displays two grey scale images. On the left is an image that has come from an 
   image processing pipeline, just after colour thresholding. On the right is 
@@ -21,7 +21,10 @@
       the pixel data type.
     
   To compile adapt the code below wo match your filenames:  
-    cc -o ip_coursework ip_coursework.c -lglut -lGL -lm 
+    gcc -o ip_coursework_087 ip_coursework_087.c -lGL -lglut -lm
+
+  To Run:
+	./ ip_coursework_087
    
   Dr Kevan Buckley, University of Wolverhampton, 2018
 ******************************************************************************/
@@ -30,6 +33,7 @@
 
 unsigned char image[], results[width * height];
 
+//takes two times as parameter and returns their difference
 int time_difference(struct timespec *start, struct timespec *finish,
                     long long int *difference) {
   	long long int ds =  finish->tv_sec - start->tv_sec; 
@@ -44,7 +48,7 @@ int time_difference(struct timespec *start, struct timespec *finish,
 	}
 
 
-__global__ void detect_edges(unsigned char *in, unsigned char *out) {
+void detect_edges(unsigned char *in, unsigned char *out) {
   int i;
   int n_pixels = width * height;
 
@@ -64,6 +68,7 @@ __global__ void detect_edges(unsigned char *in, unsigned char *out) {
       f = i + 1;
       h = i - width;
 
+	  // convolution process
       r = (in[i] * 4) + (in[b] * -1) + (in[d] * -1) + (in[f] * -1)
           + (in[h] * -1);
 
@@ -112,8 +117,10 @@ int main(int argc, char **argv) {
 
   struct timespec start, finish;   
   long long int time_elapsed;
-  clock_gettime(CLOCK_MONOTONIC, &start);
 
+  clock_gettime(CLOCK_MONOTONIC, &start);// start time
+
+   // passes image data and result array of equal size to image data and makes prominent features white and rest black
   detect_edges(image, results);
 		
   clock_gettime(CLOCK_MONOTONIC, &finish);
