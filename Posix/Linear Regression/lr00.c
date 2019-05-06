@@ -32,6 +32,7 @@ point_t data[];
 
 void print_data() {
   int i;
+  // prints all the datas in point_t data array
   for(i=0; i<n_data; i++) {
  		if( i == 0){
 		  printf("x,y\n");
@@ -46,7 +47,7 @@ int main() {
   print_data();
   return 0;
 }
-
+// given coursework data
 point_t data[] = {
   {83.40,147.61},{72.54,104.92},{65.45,133.77},{73.47,125.99},
   {76.86,154.92},{65.45,128.87},{78.30,144.23},{65.46,125.35},

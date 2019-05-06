@@ -14,15 +14,14 @@
 *****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
-
 double line(double m, double x, double c) {
   double y = (m * x) + c;
   return y;
 }
 
 int main(int args, char *argv[]) {
-  double slope = (double) atof(argv[1]);
-  double intercept = (double) atof(argv[2]);
+  double slope = (double) atof(argv[1]);// obtains slope value at runtime through commandline
+  double intercept = (double) atof(argv[2]);// obtains intercept value at runtime through commandline
   double x, y;
   int i;
   

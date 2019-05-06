@@ -17,22 +17,23 @@
  * a gradient search for a minimum in mc-space.
  * 
  * To compile:
- *   cc -o lr_coursework lr_coursework.c -lm
+ *   cc -o lr_coursework_posix lr_coursework_posix.c -lm
  * 
  * To run:
- *   ./lr_coursework
+ *   ./lr_coursework_posix
  * 
  * Dr Kevan Buckley, University of Wolverhampton, 2018
  *****************************************************************************/
 #define n_threads 8
 
-pthread_mutex_t mutex;
+
 
 typedef struct point_t {
 	double x;
 	double y;
 } point_t;
 
+// structure to store mean, intercept and error values
 typedef struct mean_intercept 
 {
 	double mean,intercept,error;
@@ -40,6 +41,7 @@ typedef struct mean_intercept
 
 int n_data = 1000;
 point_t data[];
+
 
 double residual_error(double x, double y, double m, double c) {
 	double e = (m * x) + c - y;
@@ -73,6 +75,7 @@ double rms_error(double m, double c) {
   	return sqrt(mean);
 }
 
+//function which gets array instance of structure containing mean and intercept values and stores calculated value to mean variable of structure mean_intercept
 void *find_error(void *arg) {
   	int i;
   	double mean;
@@ -85,7 +88,7 @@ void *find_error(void *arg) {
   	}
   
   	mean = error_sum / n_data;
-  
+  	// storing the value to this instance of the structure array
   	args->error =  sqrt(mean);
 	
 }
@@ -95,8 +98,6 @@ int main() {
   	double bm = 1.3;
   	double bc = 10;
 	double be;
-	double dm[8];
-  	double dc[8];
   	double e[8];
  	double step = 0.01;
   	double best_error = 999999999;
@@ -105,6 +106,8 @@ int main() {
 
   	struct timespec start, finish;   
   	long long int time_elapsed;
+
+	// dynamically allocating memory for threads and structure array
   	pthread_t *t = malloc(sizeof(pthread_t) * n_threads);
 	mean_intercept *mi = malloc(sizeof(mean_intercept) * n_threads);
   
@@ -113,16 +116,17 @@ int main() {
 	
 	
   	clock_gettime(CLOCK_MONOTONIC, &start);
+	// rms_error function takes slope and intercept as parameters and returns the rms_error
   	be = rms_error(bm, bc);
 	void *find_error();
   	while(!minimum_found) {
-    	for(i=0;i<n_threads;i++) {
-     		dm[i] = bm + (om[i] * step);
-      		dc[i] = bc + (oc[i] * step); 
-			mi[i].mean = dm[i];
-			mi[i].intercept = dc[i];
+		
+    	for(i=0;i<n_threads;i++) {		
+     		mi[i].mean = bm + (om[i] * step);// storing mean value generated in structure variable mean
+      		mi[i].intercept = bc + (oc[i] * step);// storing intercept value generated in structure variable intercept
+			// creating and passing structure address as a parameter through find_eror function
       		pthread_create(&t[i], NULL, find_error, (void *)&mi[i]);
-			pthread_join(t[i],NULL);
+			pthread_join(t[i],NULL);// priority of thread execution
 			e[i] = mi[i].error;
       		if(e[i] < best_error) {
         		best_error = e[i];
@@ -134,13 +138,13 @@ int main() {
       	dm[best_error_i], dc[best_error_i], best_error, best_error_i);*/
     	if(best_error < be) {
       		be = best_error;
-      		bm = dm[best_error_i];
-      		bc = dc[best_error_i];
+      		bm = mi[best_error_i].mean;
+      		bc = mi[best_error_i].intercept;
     	} else {
       	minimum_found = 1;
     	}
   	}
-  	printf("minimum m,c is %lf,%lf with error %lf\n", bm, bc, be);
+  	//printf("minimum m,c is %lf,%lf with error %lf\n", bm, bc, be);
 	
   	clock_gettime(CLOCK_MONOTONIC, &finish);
   	time_difference(&start, &finish, &time_elapsed);
